@@ -129,6 +129,8 @@ class Collector
 
 			$pnode = &$positive[$filename];
 			$nnode = &$negative[$filename];
+			$pnode = array();
+			$nnode = array();
 
 			$refs = isset($filters[$filename]) ? $filters[$filename] : array();
 			foreach ($lines as $num => $val) {
