@@ -26,6 +26,9 @@ class HtmlGenerator extends AbstractGenerator
 	private $coveredSum = 0;
 
 	/** @var array */
+	private $aggregates = array();
+
+	/** @var array */
 	public static $classes = array(
 		self::CODE_TESTED => 't', // tested
 		self::CODE_UNTESTED => 'u', // untested
@@ -49,14 +52,41 @@ class HtmlGenerator extends AbstractGenerator
 	{
 		$this->setupHighlight();
 		$this->parse();
+		$this->aggregate();
 
 		$title = $this->title;
 		$classes = self::$classes;
 		$files = $this->files;
 		$totalSum = $this->totalSum;
 		$coveredSum = $this->coveredSum;
+		$aggregates = $this->aggregates;
 
 		include __DIR__ . '/template.phtml';
+	}
+
+
+	private function aggregate()
+	{
+		$dirs = [];
+		foreach ($this->files as $file) {
+			$dir = $file->file;
+			do {
+				$dir = dirname($dir);
+				$dirs[$dir][] = $file->coverage;
+			} while ($dir !== $this->source);
+		}
+
+		$aggs = [];
+		$prefix = strlen(rtrim(dirname($this->source), '/\\')) + 1;
+		foreach ($dirs as $dir => $percentages) {
+			$path = substr($dir, $prefix);
+			if (count(explode('/', $path)) > 2) {
+				continue;
+			}
+			$aggs[$path] = array_sum($percentages) / count($percentages);
+		}
+
+		$this->aggregates = $aggs;
 	}
 
 

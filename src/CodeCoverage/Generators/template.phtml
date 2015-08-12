@@ -132,11 +132,35 @@
 		text-decoration: none;
 		color: hsl(240, 63%, 48%);
 	}
+
+	.aggregates {
+		margin-bottom: 2ex;
+	}
+
+	.aggregates .path {
+		/*padding-left: 39px;*/
+	}
+
 	</style>
 </head>
 
 <body>
 	<h1><?php echo $title ? htmlSpecialChars("$title - ") : ''; ?>Code coverage <?php echo $totalSum ? round($coveredSum * 100 / $totalSum) : 0 ?>&nbsp;%</h1>
+
+	<table class="aggregates">
+		<?php foreach ($aggregates as $path => $coverage): ?>
+			<tr>
+				<td class="number"><small><?php echo round($coverage) ?>&nbsp;%</small></td>
+				<td>
+					<div class="bar">
+						<div style="width: <?php echo $coverage ?>%"></div>
+					</div>
+				</td>
+				<td class="path"><?php echo $path ?></td>
+			</tr>
+		<?php endforeach ?>
+	</table>
+	<hr>
 
 	<?php foreach ($files as $id => $info): ?>
 	<div>
