@@ -112,6 +112,22 @@ class Collector
 
 
 	/**
+	 * @param string $filename
+	 * @param array  $lines
+	 * @return array
+	 */
+	private static function removeUncoverable($filename, array $lines)
+	{
+		foreach (explode("\n", file_get_contents($filename)) as $i => $source) {
+			if (preg_match('~^\W*$~', $source)) {
+				unset($lines[$i + 1]);
+			}
+		}
+		return $lines;
+	}
+
+
+	/**
 	 * Saves information about code coverage. Do not call directly.
 	 * @return void
 	 * @internal
@@ -126,6 +142,8 @@ class Collector
 			if (!file_exists($filename)) {
 				continue;
 			}
+
+			$lines = static::removeUncoverable($filename, $lines);
 
 			$pnode = &$positive[$filename];
 			$nnode = &$negative[$filename];
