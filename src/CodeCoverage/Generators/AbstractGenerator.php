@@ -13,10 +13,6 @@ namespace Tester\CodeCoverage\Generators;
  */
 abstract class AbstractGenerator
 {
-	const
-		CODE_DEAD = -2,
-		CODE_UNTESTED = -1,
-		CODE_TESTED = 1;
 
 	/** @var array */
 	public $acceptFiles = array('php', 'phpc', 'phpt', 'phtml');

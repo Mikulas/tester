@@ -28,13 +28,6 @@ class HtmlGenerator extends AbstractGenerator
 	/** @var array */
 	private $aggregates = array();
 
-	/** @var array */
-	public static $classes = array(
-		self::CODE_TESTED => 't', // tested
-		self::CODE_UNTESTED => 'u', // untested
-		self::CODE_DEAD => 'dead', // dead code
-	);
-
 
 	/**
 	 * @param  string  path to coverage.dat file
@@ -55,11 +48,12 @@ class HtmlGenerator extends AbstractGenerator
 		$this->aggregate();
 
 		$title = $this->title;
-		$classes = self::$classes;
 		$files = $this->files;
 		$totalSum = $this->totalSum;
 		$coveredSum = $this->coveredSum;
 		$aggregates = $this->aggregates;
+
+		$highlightedFiles = array_flip($this->getChangedFiles());
 
 		include __DIR__ . '/template.phtml';
 	}
@@ -80,13 +74,43 @@ class HtmlGenerator extends AbstractGenerator
 		$prefix = strlen(rtrim(dirname($this->source), '/\\')) + 1;
 		foreach ($dirs as $dir => $percentages) {
 			$path = substr($dir, $prefix);
-			if (count(explode('/', $path)) > 2) {
+
+			$limit = strpos($path, '/services') === FALSE ? 2 : 3;
+			if (count(explode('/', $path)) > $limit) {
 				continue;
 			}
 			$aggs[$path] = array_sum($percentages) / count($percentages);
 		}
 
+		ksort($aggs);
 		$this->aggregates = $aggs;
+	}
+
+
+	/**
+	 * @return \string[] $fromRef file paths
+	 */
+	private function getChangedFiles()
+	{
+		$root = dirname(dirname(dirname(dirname(dirname(dirname(__DIR__))))));
+
+		$proc = proc_open(
+			'git diff --name-only master | sort | uniq',
+			array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w')),
+			$pipes,
+			$root,
+			NULL,
+			array('bypass_shell' => TRUE)
+		);
+		$output = stream_get_contents($pipes[1]);
+
+		if (proc_close($proc)) {
+			return [];
+		}
+
+		return array_map(function($m) use ($root) {
+			return "$root/$m";
+		}, array_filter(explode("\n", $output)));
 	}
 
 
@@ -116,10 +140,8 @@ class HtmlGenerator extends AbstractGenerator
 			if ($loaded) {
 				$lines = $this->data[$entry];
 				foreach ($lines as $flag) {
-					if ($flag >= self::CODE_UNTESTED) {
-						$total++;
-					}
-					if ($flag >= self::CODE_TESTED) {
+					$total++;
+					if ($flag > 0) {
 						$covered++;
 					}
 				}

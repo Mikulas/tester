@@ -153,6 +153,12 @@ XX
 			$args .= ' -d ' . Helpers::escapeArg($item);
 		}
 
+		if (strpos($this->options['-p'], 'phpdbg') !== FALSE) {
+			$this->interpreter = new PhpDbgInterpreter($this->options['-p'], $args);
+			echo Dumper::color('blue', "Using experimental phpdbg interpreter\n");
+			return;
+		}
+
 		// Is the executable Zend PHP or HHVM?
 		$proc = @proc_open( // @ is escalated to exception
 			$this->options['-p'] . ' --version',

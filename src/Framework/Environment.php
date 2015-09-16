@@ -7,6 +7,8 @@
 
 namespace Tester;
 
+use Tester\CodeCoverage\Collector;
+
 
 /**
  * Testing environment.

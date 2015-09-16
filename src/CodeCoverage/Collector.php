@@ -1,24 +1,14 @@
 <?php
 
-/**
- * This file is part of the Nette Tester.
- * Copyright (c) 2009 David Grudl (http://davidgrudl.com)
- */
-
 namespace Tester\CodeCoverage;
 
-use Tester\Environment;
 use Tester\Helpers;
 
 
-/**
- * Code coverage collector.
- */
 class Collector
 {
 	const COVER_NOTHING = 1;
 	const COVER_ALL = 2;
-
 
 	/** @var resource */
 	protected static $file;
@@ -31,16 +21,18 @@ class Collector
 	 */
 	public static function start($file)
 	{
-		if (!extension_loaded('xdebug')) {
-			throw new \Exception('Code coverage functionality requires Xdebug extension.');
+		if (!function_exists('phpdbg_start_oplog')) {
+			throw new \Exception('Code coverage functionality requires phpdbg.');
 		} elseif (self::$file) {
 			throw new \LogicException('Code coverage collector has been already started.');
 		}
 
 		self::$file = fopen($file, 'a+');
-		xdebug_start_code_coverage(XDEBUG_CC_UNUSED | XDEBUG_CC_DEAD_CODE);
+
+		phpdbg_start_oplog();
+
 		register_shutdown_function(function () {
-			register_shutdown_function(array(__CLASS__, 'save'));
+			register_shutdown_function([__CLASS__, 'save']);
 		});
 	}
 
@@ -138,25 +130,28 @@ class Collector
 
 		$negative = array();
 		$positive = array();
-		foreach (xdebug_get_code_coverage() as $filename => $lines) {
-			if (!file_exists($filename)) {
-				continue;
+
+		/** @var array $coverage */
+		$positive = phpdbg_end_oplog(array(
+			'show_unexecuted' => FALSE
+		));
+		foreach ($positive as $file => &$lines) {
+			foreach ($lines as &$line) {
+				if ($line > 1) {
+					$line = 1;
+				}
 			}
+			ksort($lines);
+		}
 
-			$lines = static::removeUncoverable($filename, $lines);
+		$negative = phpdbg_get_executable();
 
-			$pnode = &$positive[$filename];
-			$nnode = &$negative[$filename];
-			$pnode = array();
-			$nnode = array();
-
+		foreach ($positive as $filename => &$lines) {
 			$refs = isset($filters[$filename]) ? $filters[$filename] : array();
 			foreach ($lines as $num => $val) {
 				if ($filters === self::COVER_NOTHING || ($filters !== self::COVER_ALL && !static::isCovered($refs, $num))) {
-					$val = -1;
+					unset($lines[$num]);
 				}
-
-				$val > 0 ? $pnode[$num] = $val : $nnode[$num] = $val;
 			}
 		}
 

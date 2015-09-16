@@ -141,6 +141,10 @@
 		/*padding-left: 39px;*/
 	}
 
+	.hidden {
+		display: none;
+	}
+
 	</style>
 </head>
 
@@ -160,10 +164,13 @@
 			</tr>
 		<?php endforeach ?>
 	</table>
-	<hr>
+
+	<?php if ($highlightedFiles): ?>
+		Showing only files changed in <code><?php echo $since ?>..HEAD</code>. <a href="#" onclick="showAll(); return false">Show all files</a>
+	<?php endif ?>
 
 	<?php foreach ($files as $id => $info): ?>
-	<div>
+	<div class="<?php echo isset($highlightedFiles[$info->file]) ? 'highlight' : ($highlightedFiles ? 'no-highlight hidden' : '') ?>">
 		<table>
 		<tr<?php echo $info->class ? " class='$info->class'" : '' ?>>
 			<td class="number"><small><?php echo $info->coverage ?> %</small></td>
@@ -181,8 +188,8 @@
 
 						$prevColor = NULL;
 						for ($n = 1; $n < $lineCount; ++$n) {
-							if (isset($info->lines[$n]) && isset($classes[$info->lines[$n]])) {
-								$color = $classes[$info->lines[$n]];
+							if (isset($info->lines[$n])) {
+								$color = $info->lines[$n] > 0 ? 't' : 'u';
 							} else {
 								$color = '';  // not executable
 							}
@@ -218,6 +225,12 @@
 			return false;
 		} else {
 			el.style.display = 'block';
+		}
+	}
+	function showAll() {
+		var nodes = document.querySelectorAll('.no-highlight.hidden');
+		for (var i in nodes) {
+			nodes[i].classList.remove('hidden');
 		}
 	}
 	</script>

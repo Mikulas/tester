@@ -181,7 +181,17 @@ class Job
 	 */
 	public function getExitCode()
 	{
-		return $this->exitCode;
+		// hotfix, phpdbg does not support exit codes
+		if ($this->errorOutput) {
+			return self::CODE_FAIL;
+		}
+		if (preg_match('~^\[[a-z0-9,]+\]$~i', $this->output)) {
+			return self::CODE_OK;
+		}
+		if ($this->output) {
+			return self::CODE_FAIL;
+		}
+		return self::CODE_OK;
 	}
 
 
